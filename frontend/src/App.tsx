@@ -4,8 +4,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ProcessedEvent } from "@/components/ActivityTimeline";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { ChatMessagesView } from "@/components/ChatMessagesView";
+import { LoginScreen } from "@/components/LoginScreen";
 
 export default function App() {
+  const [token, setToken] = useState<string | null>(() =>
+    localStorage.getItem("token")
+  );
   const [processedEventsTimeline, setProcessedEventsTimeline] = useState<
     ProcessedEvent[]
   >([]);
@@ -26,6 +30,7 @@ export default function App() {
       : "http://localhost:8123",
     assistantId: "agent",
     messagesKey: "messages",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     onFinish: (event: any) => {
       console.log(event);
     },
@@ -151,6 +156,10 @@ export default function App() {
     thread.stop();
     window.location.reload();
   }, [thread]);
+
+  if (!token) {
+    return <LoginScreen onLoggedIn={setToken} />;
+  }
 
   return (
     <div className="flex h-screen bg-neutral-800 text-neutral-100 font-sans antialiased">

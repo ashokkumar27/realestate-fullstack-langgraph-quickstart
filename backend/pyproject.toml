@@ -18,6 +18,11 @@ dependencies = [
     "langgraph-api",
     "fastapi",
     "google-genai",
+    "langchain-community>=0.0.30",
+    "supabase>=2.0.0",
+    "pgvector>=0.4.1",
+    "python-jose[cryptography]",
+    "passlib[bcrypt]",
 ]
 
 

@@ -23,7 +23,9 @@ from agent.prompts import (
     reflection_instructions,
     answer_instructions,
 )
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_community.vectorstores import SupabaseVectorStore
+from supabase import create_client
 from agent.utils import (
     get_citations,
     get_research_topic,
@@ -38,6 +40,21 @@ if os.getenv("GEMINI_API_KEY") is None:
 
 # Used for Google Search API
 genai_client = Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Setup Supabase vector store
+if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY"):
+    supabase_client = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
+    embeddings = GoogleGenerativeAIEmbeddings(model="embedding-001")
+    vector_store = SupabaseVectorStore(
+        client=supabase_client,
+        table_name="documents",
+        query_name="match_documents",
+        embedding=embeddings,
+    )
+    retriever = vector_store.as_retriever()
+else:
+    supabase_client = None
+    retriever = None
 
 
 # Nodes
@@ -79,6 +96,16 @@ def generate_query(state: OverallState, config: RunnableConfig) -> QueryGenerati
     # Generate the search queries
     result = structured_llm.invoke(formatted_prompt)
     return {"query_list": result.query}
+
+
+def retrieve_docs(state: OverallState, config: RunnableConfig) -> OverallState:
+    """Retrieve documents from Supabase pgvector index."""
+    if retriever is None:
+        return {"retrieved_docs": []}
+
+    question = get_research_topic(state["messages"])
+    docs = retriever.get_relevant_documents(question, k=4)
+    return {"retrieved_docs": [d.page_content for d in docs]}
 
 
 def continue_to_web_research(state: QueryGenerationState):
@@ -239,6 +266,7 @@ def finalize_answer(state: OverallState, config: RunnableConfig):
         current_date=current_date,
         research_topic=get_research_topic(state["messages"]),
         summaries="\n---\n\n".join(state["web_research_result"]),
+        retrieved_docs="\n---\n\n".join(state.get("retrieved_docs", [])),
     )
 
     # init Reasoning Model, default to Gemini 2.5 Flash
@@ -270,6 +298,7 @@ builder = StateGraph(OverallState, config_schema=Configuration)
 
 # Define the nodes we will cycle between
 builder.add_node("generate_query", generate_query)
+builder.add_node("retrieve_docs", retrieve_docs)
 builder.add_node("web_research", web_research)
 builder.add_node("reflection", reflection)
 builder.add_node("finalize_answer", finalize_answer)
@@ -277,6 +306,10 @@ builder.add_node("finalize_answer", finalize_answer)
 # Set the entrypoint as `generate_query`
 # This means that this node is the first one called
 builder.add_edge(START, "generate_query")
+# Retrieve documents before web research
+builder.add_edge("generate_query", "retrieve_docs")
+# Continue to web research after retrieval
+builder.add_edge("retrieve_docs", "web_research")
 # Add conditional edge to continue with search queries in a parallel branch
 builder.add_conditional_edges(
     "generate_query", continue_to_web_research, ["web_research"]
