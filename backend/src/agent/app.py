@@ -1,6 +1,15 @@
 # mypy: disable - error - code = "no-untyped-def,misc"
 import pathlib
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
+from .auth import (
+    UserCreate,
+    Token,
+    create_access_token,
+    get_password_hash,
+    authenticate_user,
+    supabase,
+)
 from fastapi.staticfiles import StaticFiles
 import fastapi.exceptions
 
@@ -59,3 +68,29 @@ app.mount(
     create_frontend_router(),
     name="frontend",
 )
+
+
+@app.post("/register", response_model=Token)
+def register(user: UserCreate) -> Token:
+    """Register a new user and return an access token."""
+    if supabase is None:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    existing = supabase.table("users").select("id").eq("email", user.email).execute()
+    if existing.data:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    hashed = get_password_hash(user.password)
+    supabase.table("users").insert({"email": user.email, "hashed_password": hashed}).execute()
+    token = create_access_token({"sub": user.email})
+    return Token(access_token=token)
+
+
+@app.post("/login", response_model=Token)
+def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
+    """Authenticate an existing user and return an access token."""
+    if supabase is None:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    user = authenticate_user(form_data.username, form_data.password)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    token = create_access_token({"sub": user["email"]})
+    return Token(access_token=token)

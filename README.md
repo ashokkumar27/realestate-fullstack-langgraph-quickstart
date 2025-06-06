@@ -13,6 +13,7 @@ This project demonstrates a fullstack application using a React frontend and a L
 - 🤔 Reflective reasoning to identify knowledge gaps and refine searches.
 - 📄 Generates answers with citations from gathered sources.
 - 📥 Optional retrieval from a Supabase pgvector index for RAG.
+- 🔑 Token-based authentication with users stored in Supabase.
 - 🔄 Hot-reloading for both frontend and backend development during development.
 
 ## Project Structure
@@ -32,12 +33,14 @@ Follow these steps to get the application running locally for development and te
 -   Python 3.8+
 -   **`GEMINI_API_KEY`**: The backend agent requires a Google Gemini API key.
     Optional: set **`SUPABASE_URL`** and **`SUPABASE_KEY`** if you want to enable retrieval from a Supabase pgvector index.
+    Optional: provide **`JWT_SECRET_KEY`** to sign authentication tokens (default `change-me`).
     1.  Navigate to the `backend/` directory.
     2.  Create a file named `.env` by copying the `backend/.env.example` file.
     3.  Open the `.env` file and add your Gemini API key and optional Supabase credentials:
        - `GEMINI_API_KEY="YOUR_ACTUAL_API_KEY"`
        - `SUPABASE_URL="YOUR_SUPABASE_URL"`
        - `SUPABASE_KEY="YOUR_SUPABASE_SERVICE_ROLE_KEY"`
+       - `JWT_SECRET_KEY="YOUR_RANDOM_SECRET"`
 
 **2. Install Dependencies:**
 
@@ -65,6 +68,10 @@ make dev
 This will run the backend and frontend development servers.    Open your browser and navigate to the frontend development server URL (e.g., `http://localhost:5173/app`).
 
 _Alternatively, you can run the backend and frontend development servers separately. For the backend, open a terminal in the `backend/` directory and run `langgraph dev`. The backend API will be available at `http://127.0.0.1:2024`. It will also open a browser window to the LangGraph UI. For the frontend, open a terminal in the `frontend/` directory and run `npm run dev`. The frontend will be available at `http://localhost:5173`._
+
+## Authentication
+
+Use the `/register` endpoint to create a user and `/login` to obtain a bearer token. Include this token in the `Authorization` header when interacting with the agent API.
 
 ## How the Backend Agent Works (High-Level)
 
