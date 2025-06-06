@@ -12,6 +12,7 @@ This project demonstrates a fullstack application using a React frontend and a L
 - 🌐 Integrated web research via Google Search API.
 - 🤔 Reflective reasoning to identify knowledge gaps and refine searches.
 - 📄 Generates answers with citations from gathered sources.
+- 📥 Optional retrieval from a Supabase pgvector index for RAG.
 - 🔄 Hot-reloading for both frontend and backend development during development.
 
 ## Project Structure
@@ -30,9 +31,13 @@ Follow these steps to get the application running locally for development and te
 -   Node.js and npm (or yarn/pnpm)
 -   Python 3.8+
 -   **`GEMINI_API_KEY`**: The backend agent requires a Google Gemini API key.
+    Optional: set **`SUPABASE_URL`** and **`SUPABASE_KEY`** if you want to enable retrieval from a Supabase pgvector index.
     1.  Navigate to the `backend/` directory.
     2.  Create a file named `.env` by copying the `backend/.env.example` file.
-    3.  Open the `.env` file and add your Gemini API key: `GEMINI_API_KEY="YOUR_ACTUAL_API_KEY"`
+    3.  Open the `.env` file and add your Gemini API key and optional Supabase credentials:
+       - `GEMINI_API_KEY="YOUR_ACTUAL_API_KEY"`
+       - `SUPABASE_URL="YOUR_SUPABASE_URL"`
+       - `SUPABASE_KEY="YOUR_SUPABASE_SERVICE_ROLE_KEY"`
 
 **2. Install Dependencies:**
 
