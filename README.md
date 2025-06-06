@@ -71,7 +71,7 @@ _Alternatively, you can run the backend and frontend development servers separat
 
 ## Authentication
 
-Use the `/register` endpoint to create a user and `/login` to obtain a bearer token. Include this token in the `Authorization` header when interacting with the agent API.
+Use the `/register` endpoint to create a user and `/login` to obtain a bearer token. The provided React frontend includes a simple login screen that handles token storage automatically. Once authenticated, the token is sent in the `Authorization` header for all agent requests.
 
 ## How the Backend Agent Works (High-Level)
 
